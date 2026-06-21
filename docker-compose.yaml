@@ -1,0 +1,27 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./csv:/data/csv
+      - ./tsv:/data/tsv
+    env_file:
+      - .env
+    environment:
+      - BASE_PATH=/app
+      - TSV_PATH=/data/tsv
+      - CSV_PATH=/data/tsv
+    command: uvicorn api:app --host 0.0.0.0 --port 8000 --reload
+  
+  frontend:
+    build: 
+      context: ./frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host 0.0.0.0 --port 5173
