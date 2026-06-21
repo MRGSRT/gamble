@@ -267,7 +267,7 @@ def check_num_49(used_df, df, threshold=6, date_threshold=0):
 def check_num_49_vs(used_df, df, threshold=6, date_threshold=0):
     l1 = pd.read_csv(df, sep="\t").drop(["Zusatz"], axis=1)
     l2 = pd.read_csv(used_df, sep=",").values
-    vs = used_df.split(".")[1].split("aus")[-1]
+    vs = used_df.split(".")[0].split("aus")[-1]
     l1 = l1[l1.iloc[:, 2] >= date_threshold].values
     for i in tqdm(l2, desc=f"Checking Lotto49 VS 6aus{vs}"):
         for j in l1:
