@@ -11,7 +11,7 @@ from pathlib import Path
 
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
-TS_PATTERN = f"{os.getenv('BASE_PATH')}/backend/ts_patterns.json"
+TS_PATTERN = f"{os.getenv('BASE_PATH')}/ts_patterns.json"
 CSV_PATH = os.getenv("CSV_PATH")
 
 class Lotto:
