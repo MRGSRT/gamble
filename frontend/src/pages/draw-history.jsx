@@ -102,19 +102,21 @@ export default function DrawHistory() {
         <h2 className="text-black text-lg font-bold mb-4">
           {entry.Tag}.{String(entry.Monat).padStart(2, "0")}.{entry.Jahr}
         </h2>
-
         <div className="space-y-4">
-          <div className={`grid gap-3 mb-4 ${displayMode === "separate" ? "grid-cols-3 md:grid-cols-6" : "grid-cols-3 md:grid-cols-6"}`}>
-            {displayNumbers.map((num) =>
-              displayMode === "separate"
-                ? renderNumberCircle(num, "white")
-                : renderNumberCircle(num, "white")
-            )}
-          </div>
 
-          <div className="flex items-center gap-4 pt-4 border-t-2 border-gray-300">
-            <span className="text-black font-bold text-lg">Superzahl:</span>
-            {renderNumberCircle(entry.Super, "red")}
+          <h3 className="text-black font-bold text-sm mb-2">Zahlen (1-49):</h3>
+          <div className="space-y-4">
+            <div className={`grid gap-3 mb-4 ${displayMode === "separate" ? "grid-cols-3 md:grid-cols-6" : "grid-cols-3 md:grid-cols-6"}`}>
+              {displayNumbers.map((num) =>
+                displayMode === "separate"
+                  ? renderNumberCircle(num, "white")
+                  : renderNumberCircle(num, "white")
+              )}
+            </div>
+            <div className="pt-4 border-t-2 border-gray-300">
+              <h3 className="text-black font-bold text-sm mb-2">Superzahl (0-9):</h3>
+              {renderNumberCircle(entry.Super, "red")}
+            </div>
           </div>
         </div>
       </div>
@@ -172,6 +174,7 @@ export default function DrawHistory() {
         <h2 className="text-black text-lg font-bold mb-4">
           {entry.Tag}.{String(entry.Monat).padStart(2, "0")}.{entry.Jahr}
         </h2>
+        <h3 className="text-black font-bold text-sm mb-2">Zahlen (1-70):</h3>
         <div className="grid grid-cols-5 md:grid-cols-10 gap-3">
           {displayNumbers.map((num) => renderNumberCircle(num, "purple"))}
         </div>
@@ -341,8 +344,8 @@ export default function DrawHistory() {
             <button
               onClick={() => setActiveTab("glücksrad")}
               className={`px-4 py-2 rounded font-bold transition ${activeTab === "glücksrad"
-                  ? "rainbow-active"
-                  : "rainbow-hover"
+                ? "rainbow-active"
+                : "rainbow-hover"
                 }`}
             >
               Glücksrad
@@ -447,21 +450,6 @@ export default function DrawHistory() {
                 </button>
               </div>
             )}
-
-          {/* Legend */}
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg text-black text-sm">
-            <p className="font-bold mb-2">Legend:</p>
-            <ul className="space-y-1">
-              <li>
-                <span className="inline-block w-4 h-4 rounded-full bg-red-500 mr-2"></span>
-                Superzahl (Lotto 6aus49)
-              </li>
-              <li>
-                <span className="inline-block w-4 h-4 rounded-full bg-yellow-500 mr-2"></span>
-                Eurozahlen (Eurojackpot)
-              </li>
-            </ul>
-          </div>
         </div>
       </div>
     </div>
