@@ -37,6 +37,7 @@ class Lotto49(Lotto):
 
     def choose(self, k=6):
         np.random.default_rng()
+        self.unique = True
         self.set = np.sort(np.random.choice(self.numPool49, k, replace=False), axis=0)
         self.num = np.random.choice(self.superNum, 1)
 
@@ -99,6 +100,7 @@ class Eurojackpot(Lotto):
 
     def choose(self, k=5, s=2):
         np.random.default_rng()
+        self.unique = True
         self.set = np.sort(np.random.choice(self.numPoolJackpot, k, replace=False), axis=0)
         self.num = np.sort(np.random.choice(self.superNums, s, replace=False), axis=0)
 
@@ -143,6 +145,7 @@ class Keno(Lotto):
 
     def choose(self):
         np.random.default_rng()
+        self.unique = True
         self.set = np.sort(np.random.choice(self.numPoolKeno, self.typ, replace=False), axis=0)
 
     def check_history(self, threshold=10):
