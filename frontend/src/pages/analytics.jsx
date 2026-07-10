@@ -67,10 +67,10 @@ export default function Analytics() {
     const minPct4 = Math.min(...state.lotto6aus49_superzahl.map(d => d.percent));
     const maxPct4 = Math.max(...state.lotto6aus49_superzahl.map(d => d.percent));
 
-    const minPct6 = state.lotto6aus49_not_drawn.length > 0 ? Math.min(...state.lotto6aus49_not_drawn.map(d => d.days_since).filter(d => d >= 0)) : 0;
-    const maxPct6 = state.lotto6aus49_not_drawn.length > 0 ? Math.max(...state.lotto6aus49_not_drawn.map(d => d.days_since).filter(d => d >= 0)) : 100;
-    const minPct7 = state.eurojackpot_not_drawn.length > 0 ? Math.min(...state.eurojackpot_not_drawn.map(d => d.days_since).filter(d => d >= 0)) : 0;
-    const maxPct7 = state.eurojackpot_not_drawn.length > 0 ? Math.max(...state.eurojackpot_not_drawn.map(d => d.days_since).filter(d => d >= 0)) : 100;
+    const minPct6 = state.lotto6aus49_not_drawn.length > 0 ? Math.min(...state.lotto6aus49_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 0;
+    const maxPct6 = state.lotto6aus49_not_drawn.length > 0 ? Math.max(...state.lotto6aus49_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 100;
+    const minPct7 = state.eurojackpot_not_drawn.length > 0 ? Math.min(...state.eurojackpot_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 0;
+    const maxPct7 = state.eurojackpot_not_drawn.length > 0 ? Math.max(...state.eurojackpot_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 100;
 
     return (
         <div className="min-h-screen bg-gray-300 p-8 flex flex-col items-center">
@@ -228,7 +228,7 @@ export default function Analytics() {
                     </div>
                 </div>
                 <div className="flex gap-10 items-start justify-center flex-wrap">
-                    <h2 className="text-2xl font-bold mb-4 text-black mt-8">Letztes Mal Gezogen in Tagen</h2>
+                    <h2 className="text-2xl font-bold mb-4 text-black mt-8">Letztes Mal Gezogen in Ziehungen</h2>
                 </div>
 
                 <div className="bg-gray-100 shadow-xl rounded-lg p-6">
@@ -247,23 +247,23 @@ export default function Analytics() {
                                         d => d.type === "main" && d.number === number
                                     );
 
-                                    const last_drawn = item?.last_drawn || "Never";
-                                    const days_since = item?.days_since ?? -1;
+                                    const draw_date = item?.draw_date || "Never";
+                                    const last_drawn = item?.last_drawn ?? -1;
 
-                                    const bg = days_since >= 0
-                                        ? getPastelColor(days_since, minPct6, maxPct6)
+                                    const bg = last_drawn >= 0
+                                        ? getPastelColor(last_drawn, minPct6, maxPct6)
                                         : "#ddd";
 
                                     return (
                                         <div
                                             key={`lotto-main-${number}`}
-                                            title={`Number: ${number} | Last drawn: ${last_drawn} | Days since: ${days_since}`}
+                                            title={`Number: ${number} | Date: ${draw_date} | Last drawn: ${last_drawn}`}
                                             className="w-14 h-14 flex flex-col items-center justify-center rounded-lg text-gray-800 font-bold shadow hover:scale-105 transition"
                                             style={{ backgroundColor: bg }}
                                         >
                                             <span className="text-s">{number}</span>
                                             <span className="text-s text-gray-600">
-                                                {days_since >= 0 ? days_since : "∞"}
+                                                {last_drawn >= 0 ? last_drawn : "∞"}
                                             </span>
                                         </div>
                                     );
@@ -279,23 +279,23 @@ export default function Analytics() {
                                         d => d.type === "super" && d.number === number
                                     );
 
-                                    const last_drawn = item?.last_drawn || "Never";
-                                    const days_since = item?.days_since ?? -1;
+                                    const draw_date = item?.draw_date || "Never";
+                                    const last_drawn = item?.last_drawn ?? -1;
 
-                                    const bg = days_since >= 0
-                                        ? getPastelColor(days_since, minPct6, maxPct6)
+                                    const bg = last_drawn >= 0
+                                        ? getPastelColor(last_drawn, minPct6, maxPct6)
                                         : "#ddd";
 
                                     return (
                                         <div
                                             key={`lotto-super-${number}`}
-                                            title={`Superzahl: ${number} | Last drawn: ${last_drawn} | Days since: ${days_since}`}
+                                            title={`Superzahl: ${number} | Date: ${draw_date} | Last drawn: ${last_drawn}`}
                                             className="w-14 h-14 flex flex-col items-center justify-center rounded-lg text-gray-800 font-bold shadow hover:scale-105 transition"
                                             style={{ backgroundColor: bg }}
                                         >
                                             <span className="text-s">{number}</span>
                                             <span className="text-s text-gray-600">
-                                                {days_since >= 0 ? days_since : "∞"}
+                                                {last_drawn >= 0 ? last_drawn : "∞"}
                                             </span>
                                         </div>
                                     );
@@ -316,23 +316,23 @@ export default function Analytics() {
                                         d => d.type === "main" && d.number === number
                                     );
 
-                                    const last_drawn = item?.last_drawn || "Never";
-                                    const days_since = item?.days_since ?? -1;
+                                    const draw_date = item?.draw_date || "Never";
+                                    const last_drawn = item?.last_drawn ?? -1;
 
-                                    const bg = days_since >= 0
-                                        ? getPastelColor(days_since, minPct7, maxPct7)
+                                    const bg = last_drawn >= 0
+                                        ? getPastelColor(last_drawn, minPct7, maxPct7)
                                         : "#ddd";
 
                                     return (
                                         <div
                                             key={`euro-main-${number}`}
-                                            title={`Number: ${number} | Last drawn: ${last_drawn} | Days since: ${days_since}`}
+                                            title={`Number: ${number} | Date: ${draw_date} | Last drawn: ${last_drawn}`}
                                             className="w-14 h-14 flex flex-col items-center justify-center rounded-lg text-gray-800 text-sm font-bold shadow hover:scale-105 transition"
                                             style={{ backgroundColor: bg }}
                                         >
                                             <span className="text-s">{number}</span>
                                             <span className="text-s text-gray-600">
-                                                {days_since >= 0 ? days_since : "∞"}
+                                                {last_drawn >= 0 ? last_drawn : "∞"}
                                             </span>
                                         </div>
                                     );
@@ -348,23 +348,23 @@ export default function Analytics() {
                                         d => d.type === "euro" && d.number === number
                                     );
 
-                                    const last_drawn = item?.last_drawn || "Never";
-                                    const days_since = item?.days_since ?? -1;
+                                    const draw_date = item?.draw_date || "Never";
+                                    const last_drawn = item?.last_drawn ?? -1;
 
-                                    const bg = days_since >= 0
-                                        ? getPastelColor(days_since, minPct7, maxPct7)
+                                    const bg = last_drawn >= 0
+                                        ? getPastelColor(last_drawn, minPct7, maxPct7)
                                         : "#ddd";
 
                                     return (
                                         <div
                                             key={`euro-special-${number}`}
-                                            title={`Eurozahl: ${number} | Last drawn: ${last_drawn} | Days since: ${days_since}`}
+                                            title={`Eurozahl: ${number} | Date: ${draw_date} | Last drawn: ${last_drawn}`}
                                             className="w-14 h-14 flex flex-col items-center justify-center rounded-lg text-gray-800 text-sm font-bold shadow hover:scale-105 transition"
                                             style={{ backgroundColor: bg }}
                                         >
                                             <span className="text-s">{number}</span>
                                             <span className="text-s text-gray-600">
-                                                {days_since >= 0 ? days_since : "∞"}
+                                                {last_drawn >= 0 ? last_drawn : "∞"}
                                             </span>
                                         </div>
                                     );

@@ -5,6 +5,8 @@ from bigmoney import *
 from tools import *
 from dotenv import load_dotenv
 from pathlib import Path
+from datetime import datetime
+from typing import cast
 
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
@@ -180,63 +182,33 @@ def heatmap_lotto6aus49_superzahl():
 def heatmap_lotto6aus49_not_drawn():
     try:
         df = pd.read_csv(L49file, sep="\t")
-
-        df['date'] = pd.to_datetime(
-            df[['Jahr', 'Monat', 'Tag']].rename(
-                columns={
-                    'Jahr': 'year',
-                    'Monat': 'month',
-                    'Tag': 'day'
-                }
-            )
-        )
-
-        df = df.sort_values('date', ascending=False)
-
-        main_cols = [
-            "Zahl1", "Zahl2", "Zahl3",
-            "Zahl4", "Zahl5", "Zahl6"
-        ]
-
+        z_mask = {i: -1 for i in range(1, 50)}
+        s_mask = {i: -1 for i in range(0, 10)}
         result = []
-
-        for number in range(1, 50):
-            mask = df[main_cols].isin([number]).any(axis=1)
-            matching_rows = df[mask]
-
-            if len(matching_rows) > 0:
-                last_drawn_date = matching_rows.iloc[0]['date']
-                days_since = (pd.Timestamp.now() - last_drawn_date).days
-            else:
-                last_drawn_date = None
-                days_since = -1
-
-            result.append({
-                "type": "main",
-                "number": number,
-                "last_drawn": last_drawn_date.strftime("%Y-%m-%d") if last_drawn_date else None,
-                "days_since": int(days_since) if days_since >= 0 else -1
-            })
-
-        for number in range(0, 10):
-            mask = df["Super"] == number
-            matching_rows = df[mask]
-
-            if len(matching_rows) > 0:
-                last_drawn_date = matching_rows.iloc[0]['date']
-                days_since = (pd.Timestamp.now() - last_drawn_date).days
-            else:
-                last_drawn_date = None
-                days_since = -1
-
-            result.append({
-                "type": "super",
-                "number": number,
-                "last_drawn": last_drawn_date.strftime("%Y-%m-%d") if last_drawn_date else None,
-                "days_since": int(days_since) if days_since >= 0 else -1
-            })
-
-        return result
+        for i, row in enumerate(df.iloc[::-1].itertuples(index=False)):
+            z = [row.Zahl1, row.Zahl2, row.Zahl3, row.Zahl4, row.Zahl5, row.Zahl6]
+            s = cast(int, row.Super)
+            dt = datetime(cast(int,row.Jahr), cast(int,row.Monat), cast(int,row.Tag)).strftime("%d-%m-%Y")
+            for j in z:
+                j = cast(int, j)
+                if z_mask[j] == -1:
+                    z_mask[j] = i
+                    result.append({
+                        "type": "main",
+                        "number": j,
+                        "draw_date": dt,
+                        "last_drawn": z_mask[j]
+                    })
+            if s_mask[s] == -1:
+                s_mask[s] = i
+                result.append({
+                    "type": "super",
+                    "number": s,
+                    "draw_date": dt,
+                    "last_drawn": s_mask[s]
+                })
+            if all(value >= 0 for value in z_mask.values()) and all(value >= 0 for value in s_mask.values()):
+                return sorted(result, key=lambda x: (0 if x['type'] == 'main' else 1, x['number']))
     except Exception as e:
         return {"error": str(e)}
 
@@ -245,68 +217,35 @@ def heatmap_lotto6aus49_not_drawn():
 def heatmap_eurojackpot_not_drawn():
     try:
         df = pd.read_csv(EJfile, sep="\t")
-
-        df['date'] = pd.to_datetime(
-            df[['Jahr', 'Monat', 'Tag']].rename(
-                columns={
-                    'Jahr': 'year',
-                    'Monat': 'month',
-                    'Tag': 'day'
-                }
-            )
-        )
-
-        df = df.sort_values('date', ascending=False)
-
-        main_cols = [
-            "ZahlA1", "ZahlA2", "ZahlA3",
-            "ZahlA4", "ZahlA5"
-        ]
-
-        euro_cols = [
-            "ZahlB1", "ZahlB2"
-        ]
-
+        z_mask = {i: -1 for i in range(1, 51)}
+        e_mask = {i: -1 for i in range(1, 13)}
         result = []
-
-        for number in range(1, 51):
-            mask = df[main_cols].isin([number]).any(axis=1)
-            matching_rows = df[mask]
-
-            if len(matching_rows) > 0:
-                last_drawn_date = matching_rows.iloc[0]['date']
-                days_since = (pd.Timestamp.now() - last_drawn_date).days
-            else:
-                last_drawn_date = None
-                days_since = -1
-
-            result.append({
-                "type": "main",
-                "number": number,
-                "last_drawn": last_drawn_date.strftime("%Y-%m-%d") if last_drawn_date else None,
-                "days_since": int(days_since) if days_since >= 0 else -1
-            })
-
-        # Euro numbers 1-12
-        for number in range(1, 13):
-            mask = df[euro_cols].isin([number]).any(axis=1)
-            matching_rows = df[mask]
-
-            if len(matching_rows) > 0:
-                last_drawn_date = matching_rows.iloc[0]['date']
-                days_since = (pd.Timestamp.now() - last_drawn_date).days
-            else:
-                last_drawn_date = None
-                days_since = -1
-
-            result.append({
-                "type": "euro",
-                "number": number,
-                "last_drawn": last_drawn_date.strftime("%Y-%m-%d") if last_drawn_date else None,
-                "days_since": int(days_since) if days_since >= 0 else -1
-            })
-
-        return result
+        for i, row in enumerate(df.iloc[::-1].itertuples(index=False)):
+            z = [row.ZahlA1, row.ZahlA2, row.ZahlA3, row.ZahlA4, row.ZahlA5]
+            e = [row.ZahlB1, row.ZahlB2]
+            dt = datetime(cast(int,row.Jahr), cast(int,row.Monat), cast(int,row.Tag)).strftime("%d-%m-%Y")
+            for j in z:
+                j = cast(int, j)
+                if z_mask[j] == -1:
+                    z_mask[j] = i
+                    result.append({
+                        "type": "main",
+                        "number": j,
+                        "draw_date": dt,
+                        "last_drawn": z_mask[j]
+                    })
+            for j in e:
+                j = cast(int, j)
+                if e_mask[j] == -1:
+                    e_mask[j] = i
+                    result.append({
+                        "type": "euro",
+                        "number": j,
+                        "draw_date": dt,
+                        "last_drawn": e_mask[j]
+                    })
+            if all(value >= 0 for value in z_mask.values()) and all(value >= 0 for value in e_mask.values()):
+                return sorted(result, key=lambda x: (0 if x['type'] == 'main' else 1, x['number']))
     except Exception as e:
         return {"error": str(e)}
 
