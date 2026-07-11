@@ -7,7 +7,9 @@ from dotenv import load_dotenv
 from pathlib import Path
 from datetime import datetime
 from typing import cast
-
+from pydantic import BaseModel
+from typing import List, Any
+import time
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 env = os.getenv("TSV_PATH")
@@ -19,8 +21,7 @@ Super6file = f"{env}/super6.txt"
 Spiel77file = f"{env}/spiel77.txt"
 Glücksradfile = f"{env}/gs.txt"
 
-
-ts_num_count = "ts_num_count.json"
+TS_NUM_COUNT = f"{os.getenv('BASE_PATH')}/ts_num_count.json"
 
 app = FastAPI()
 
@@ -31,6 +32,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+class MatchRequest(BaseModel):
+    type: str
+    numbers: Any
+    supernum: Any
 
 
 @app.get("/data_lotto6aus49")
@@ -251,7 +258,7 @@ def heatmap_eurojackpot_not_drawn():
 
 
 @app.get("/randomEurojackpot")
-def randomEurojackpot(mode: int = 1, qtipps: int = 1, count1: int = 5, count2: int = 2):
+def randomEurojackpot(mode: int = 1, qtipps: int = 1, count1: int = 5, count2: int = 2, threshold: int = 3):
     if (count1 == 5 or count1 == 6) and (count2 >= 2 or count2 <= 12):
         pass
     elif count1 == 7 and (count2 >= 2 or count2 <= 7):
@@ -268,54 +275,69 @@ def randomEurojackpot(mode: int = 1, qtipps: int = 1, count1: int = 5, count2: i
     euro = Eurojackpot(EJfile)
     setlist = []
     supernum = []
+    history = []
 
     if mode == 1:
         for _ in range(qtipps):
             euro.choose(5, 2)
             setlist.append(euro.set)
             supernum.append(euro.num)
+            history.append(euro.check_history(threshold))
     else:
         euro.choose(count1, count2)
         setlist.append(euro.set)
         supernum.append(euro.num)
-    
-    arrow_data = eurojackpot_arrow(setlist, supernum)
-    return Response(
-        content=arrow_data,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": "attachment; filename=lotto.arrow"}
-    )
+        history.append(euro.check_history(threshold))
 
+    setlist = [x.tolist() for x in setlist]
+    supernum = [x.tolist() for x in supernum]
+    history = clean_history(history)
+
+    return {
+        "setlist": setlist,
+        "supernum": supernum,
+        "history": history
+    }
+    
 
 @app.get("/random_6aus49")
-def random_6aus49(button: int = 6, mode: int = 1):
+def random_6aus49(button: int = 6, mode: int = 1, threshold: int = 4):
     lotto49 = Lotto49(L49file)
     setlist = []
     supernum = []
+    history = []
+
     match mode:
         case 1:
             for _ in range(button):
                 lotto49.choose()
                 setlist.append(lotto49.set)
                 supernum.append(lotto49.num)
+                history.append(lotto49.check_history(threshold))
         case 2:
-            with open(ts_num_count, "r") as f:
-                count = json.load(f)
-            lotto49.choose(count.get(f"{button}"))
+            with open(TS_NUM_COUNT, "r") as f:
+                k = json.load(f)
+            lotto49.choose(k.get(f"{button}"))
             setlist = get_sets(lotto49.set, f"{button}")
             supernum.append(lotto49.num)
+            history.append(lotto49.check_history(threshold, ts=f"{button}"))
         case 3:
             lotto49.choose(button)
             setlist = get_sets(lotto49.set)
             supernum.append(lotto49.num)
+            history.append(lotto49.check_history(threshold))
         case _:
             pass
-    arrow_data = lotto_arrow(setlist, supernum)
-    return Response(
-        content=arrow_data,
-        media_type="application/octet-stream",
-        headers={"Content-Disposition": "attachment; filename=lotto.arrow"}
-    )
+
+    setlist = [x.tolist() for x in setlist]
+    supernum = [x.tolist() for x in supernum]
+    history = clean_history(history)
+
+    return {
+        "setlist": setlist,
+        "supernum": supernum,
+        "history": history
+    }
 
 
 @app.get("/random_keno")

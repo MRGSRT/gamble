@@ -8,11 +8,13 @@ from tqdm import tqdm
 from itertools import combinations
 from dotenv import load_dotenv
 from pathlib import Path
+from datetime import datetime
 
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 TS_PATTERN = f"{os.getenv('BASE_PATH')}/ts_patterns.json"
 CSV_PATH = os.getenv("CSV_PATH")
+
 
 class Lotto:
 
@@ -38,41 +40,50 @@ class Lotto49(Lotto):
     def choose(self, k=6):
         np.random.default_rng()
         self.unique = False
-        self.set = np.sort(np.random.choice(self.numPool49, k, replace=False), axis=0)
+        self.set = np.sort(np.random.choice(
+            self.numPool49, k, replace=False), axis=0)
         self.num = np.random.choice(self.superNum, 1)
 
     def check_history(self, threshold=6, ts=""):
         self.unique = True
-        orig = pd.read_csv(self.history, sep="\t").drop(["Zusatz"], axis=1).values
+        orig = pd.read_csv(self.history, sep="\t").drop(
+            ["Zusatz"], axis=1).values
         num = (pd.read_csv(self.history, sep="\t").
                drop(["Tag", "Monat", "Jahr", "Zusatz", "Super"], axis=1).
                values)
+        supernum = (pd.read_csv(self.history, sep="\t", usecols=["Super"]).
+                    values)
+        matches = []
         if ts != "":
             with open(TS_PATTERN, "r") as f:
                 all_patterns = json.load(f)
             pattern = all_patterns.get(ts, [])
             sets = [[self.set[i - 1] for i in s] for s in pattern]
             sets = np.array([sorted(s) for s in sets])
-            for i in range(len(sets)):
+            for i in range(len(sets) - 1):
                 for j in range(num.shape[0]):
-                    sum = np.isin(sets[i], num[j]).sum()
-                    common = np.intersect1d(sets[i], num[j])
-                    if sum >= threshold:
-                        print(f"Found: {orig[j][0:3]} {np.sort(orig[j][3:9])} {orig[j][9]} == {sum} | {sets[i]} {common}")
+                    new_matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                              sets[i], num[j], threshold, self.num, supernum[j])
+                    if matches != new_matches:
                         self.unique = False
         else:
             for i in range(num.shape[0]):
-                sum = np.isin(self.set, num[i]).sum()
-                common = np.intersect1d(self.set, num[i])
-                if sum >= threshold:
-                    print(f"Found: {orig[i][0:3]} {np.sort(orig[i][3:9])} {orig[i][9]} == {sum} | {common}")
+                new_matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                          self.set, num[i], threshold, self.num, supernum[i])
+                if matches != new_matches:
                     self.unique = False
 
+        matches.sort(key=lambda x: x["date_"])
+        return matches
+
+    def check_history_and_print(self, threshold=5, ts=""):
+        matches = self.check_history(threshold, ts)
+        print_matches(matches)
+        self.print()
+
     def print(self):
-        # print("Lotto49")
-        # print(f"Lotto49Pool: {self.numPool49}\nSuperNum: {self.superNum}")
         print(f"Set: {self.set}\nSuper: {self.num}\n")
-    
+
     def write_down(self, file):
         with open(file, "a") as f:
             set_size = len(self.set)
@@ -101,23 +112,34 @@ class Eurojackpot(Lotto):
     def choose(self, k=5, s=2):
         np.random.default_rng()
         self.unique = False
-        self.set = np.sort(np.random.choice(self.numPoolJackpot, k, replace=False), axis=0)
-        self.num = np.sort(np.random.choice(self.superNums, s, replace=False), axis=0)
+        self.set = np.sort(np.random.choice(
+            self.numPoolJackpot, k, replace=False), axis=0)
+        self.num = np.sort(np.random.choice(
+            self.superNums, s, replace=False), axis=0)
 
     def check_history(self, threshold=5):
         self.unique = True
         orig = pd.read_csv(self.history, sep="\t").values
-        supernum = pd.read_csv(self.history, sep="\t")[["ZahlB1", "ZahlB2"]].values
-        num = pd.read_csv(self.history, sep="\t")[["ZahlA1", "ZahlA2", "ZahlA3", "ZahlA4", "ZahlA5"]].values
+        supernum = pd.read_csv(self.history, sep="\t")[
+            ["ZahlB1", "ZahlB2"]].values
+        num = pd.read_csv(self.history, sep="\t")[
+            ["ZahlA1", "ZahlA2", "ZahlA3", "ZahlA4", "ZahlA5"]].values
+        matches = []
+
         for i in range(num.shape[0]):
-            sum = np.isin(self.set, num[i]).sum()
-            if sum >= threshold:
-                print(f"Found: {orig[i][0:3]} {np.sort(orig[i][3:8])} {np.sort(orig[i][8:10])} == {sum}")
+            new_matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                      self.set, num[i], threshold, self.num, supernum[i])
+            if matches != new_matches:
                 self.unique = False
+        matches.sort(key=lambda x: x["date_"])
+        return matches
+
+    def check_history_and_print(self, threshold=5):
+        matches = self.check_history(threshold)
+        print_matches(matches)
+        self.print()
 
     def print(self):
-        # print("Eurojackpot")
-        # print(f"JackpotPool: {self.numPoolJackpot}\nSuperNums: {self.superNums}")
         print(f"Set: {self.set}\nSuper: {self.num}\n")
 
     def write_down(self, file):
@@ -146,7 +168,8 @@ class Keno(Lotto):
     def choose(self):
         np.random.default_rng()
         self.unique = False
-        self.set = np.sort(np.random.choice(self.numPoolKeno, self.typ, replace=False), axis=0)
+        self.set = np.sort(np.random.choice(
+            self.numPoolKeno, self.typ, replace=False), axis=0)
 
     def check_history(self, threshold=10):
         self.unique = True
@@ -154,15 +177,19 @@ class Keno(Lotto):
         num = (pd.read_csv(self.history, sep="\t").
                drop(["Tag", "Monat", "Jahr", "VA"], axis=1).
                values)
+        matches = []
         for i in range(num.shape[0]):
-            s = np.isin(self.set, num[i]).sum()
-            if s >= threshold:
-                print(f"Found: {orig[i][0:3]} {np.sort(orig[i][3::])} | {s}")
-                self.unique = False
+            matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                  self.set, num[i], threshold, None, None)
+        matches.sort(key=lambda x: x["date_"])
+        return matches
+
+    def check_history_and_print(self, threshold=5):
+        matches = self.check_history(threshold)
+        print_matches(matches)
+        self.print()
 
     def print(self):
-        # print(f"Keno Typ {self.typ}")
-        # print(f"KenoPool: {self.numPoolKeno}")
         print(f"Set: {self.set}\n")
 
     def write_down(self, file):
@@ -174,39 +201,46 @@ class Keno(Lotto):
 def show_dups(file):
     if "6aus49" in file:
         print("6aus49")
-        a1 = pd.read_csv(file, sep="\t")[["Zahl1", "Zahl2", "Zahl3", "Zahl4", "Zahl5", "Zahl6"]].values
+        a1 = pd.read_csv(file, sep="\t")[
+            ["Zahl1", "Zahl2", "Zahl3", "Zahl4", "Zahl5", "Zahl6"]].values
         a1.sort()
         temp = pd.read_csv(file, sep="\t")["Super"].to_numpy().reshape(-1, 1)
 
         a2 = np.hstack((a1, temp))
-        _, idx, counts = np.unique(a1, axis=0, return_index=True, return_counts=True)
+        _, idx, counts = np.unique(
+            a1, axis=0, return_index=True, return_counts=True)
         duplicates = a1[idx[counts > 1]]
         print(f"Duplicates: {duplicates}")
-        _, idx, counts = np.unique(a2, axis=0, return_index=True, return_counts=True)
+        _, idx, counts = np.unique(
+            a2, axis=0, return_index=True, return_counts=True)
         duplicates = a2[idx[counts > 1]]
         print(f"Duplicates SuperNum: {duplicates}\n")
 
     if "eurojackpot" in file:
         print("Eurojackpot")
-        a1 = pd.read_csv(file, sep="\t")[["ZahlA1", "ZahlA2", "ZahlA3", "ZahlA4", "ZahlA5"]].values
+        a1 = pd.read_csv(file, sep="\t")[
+            ["ZahlA1", "ZahlA2", "ZahlA3", "ZahlA4", "ZahlA5"]].values
         temp = pd.read_csv(file, sep="\t")[["ZahlB1", "ZahlB2"]].values
         a1.sort()
         temp.sort()
         a2 = np.hstack((a1, temp))
 
-        _, idx, counts = np.unique(a1, axis=0, return_index=True, return_counts=True)
+        _, idx, counts = np.unique(
+            a1, axis=0, return_index=True, return_counts=True)
         duplicates = a1[idx[counts > 1]]
         print(f"Duplicates: {duplicates}")
-        _, idx, counts = np.unique(a2, axis=0, return_index=True, return_counts=True)
+        _, idx, counts = np.unique(
+            a2, axis=0, return_index=True, return_counts=True)
         duplicates = a2[idx[counts > 1]]
         print(f"Duplicates SuperNum: {duplicates}\n")
 
     if "keno" in file:
         print("Keno")
         a1 = (pd.read_csv(file, sep="\t").
-               drop(["Tag", "Monat", "Jahr", "VA"], axis=1).
-               values)
-        _, idx, counts = np.unique(a1, axis=0, return_index=True, return_counts=True)
+              drop(["Tag", "Monat", "Jahr", "VA"], axis=1).
+              values)
+        _, idx, counts = np.unique(
+            a1, axis=0, return_index=True, return_counts=True)
         duplicates = a1[idx[counts > 1]]
         print(f"Duplicates: {duplicates}\n")
 
@@ -214,26 +248,28 @@ def show_dups(file):
         return
 
 
-def check_num(file, arr, threshold_49=6, threshold_euro=5, threshold_keno=10):
+def check_num(file, arr, sz=None, threshold_49=6, threshold_euro=5, threshold_keno=10):
+    matches = []
     if "6aus49" in file:
         print(f"Lotto49: {arr}")
         orig = pd.read_csv(file, sep="\t").drop(["Zusatz"], axis=1).values
         num = (pd.read_csv(file, sep="\t").
                drop(["Tag", "Monat", "Jahr", "Zusatz", "Super"], axis=1).
                values)
+        supernum = (pd.read_csv(file, sep="\t", usecols=["Super"]).
+                    values)
         for i in range(num.shape[0]):
-            sum = np.isin(arr, num[i]).sum()
-            if sum >= threshold_49:
-                print(f"Found: {orig[i][0:3]} {np.sort(orig[i][3:9])} {orig[i][9]} == {sum}")
+            matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                  arr, num[i], threshold_49, sz, supernum[i])
     if "eurojackpot" in file:
         print(f"Eurojackpot: {arr}")
         orig = pd.read_csv(file, sep="\t").values
         supernum = pd.read_csv(file, sep="\t")[["ZahlB1", "ZahlB2"]].values
-        num = pd.read_csv(file, sep="\t")[["ZahlA1", "ZahlA2", "ZahlA3", "ZahlA4", "ZahlA5"]].values
+        num = pd.read_csv(file, sep="\t")[
+            ["ZahlA1", "ZahlA2", "ZahlA3", "ZahlA4", "ZahlA5"]].values
         for i in range(num.shape[0]):
-            sum = np.isin(arr, num[i]).sum()
-            if sum >= threshold_euro:
-                print(f"Found: {orig[i][0:3]} {np.sort(orig[i][3:8])} {np.sort(orig[i][8:10])} == {sum}")
+            matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                  arr, num[i], threshold_euro, sz, supernum[i])
     if "keno" in file:
         print(f"Keno: {arr}")
         orig = pd.read_csv(file, sep="\t").values
@@ -241,30 +277,30 @@ def check_num(file, arr, threshold_49=6, threshold_euro=5, threshold_keno=10):
                drop(["Tag", "Monat", "Jahr", "VA"], axis=1).
                values)
         for i in range(num.shape[0]):
-            s = np.isin(arr, num[i]).sum()
-            if s >= threshold_keno:
-                print(f"Found: {orig[i][0:3]} {np.sort(orig[i][3::])} | {s}")
-    
+            matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                                  arr, num[i], threshold_keno)
+    matches.sort(key=lambda x: x["date_"])
+    return matches
+
 
 def check_used_num(used_euro, used_49, used_keno, EJ, L49, K, threshold_49=6, threshold_euro=5, threshold_keno=10, date_threshold=0):
-    check_num_49(used_49, L49, threshold_49, date_threshold)
-    check_num_euro(used_euro, EJ, threshold_euro, date_threshold)
-    check_num_keno(used_keno, K, threshold_keno, date_threshold)
+    return (check_num_49(used_49, L49, threshold_49, date_threshold),
+            check_num_euro(used_euro, EJ, threshold_euro, date_threshold),
+            check_num_keno(used_keno, K, threshold_keno, date_threshold))
 
 
 def check_num_49(used_df, df, threshold=6, date_threshold=0):
     l1 = pd.read_csv(df, sep="\t").drop(["Zusatz"], axis=1)
     l2 = pd.read_csv(used_df, sep=",").values
     l1 = l1[l1.iloc[:, 2] >= date_threshold].values
+    matches = []
     for i in tqdm(l2, desc="Checking Lotto49"):
+        sz = i[-1]
         for j in l1:
-            sum = np.isin(i[0:6], j[3:9]).sum()
-            if sum >= threshold and i[6] != j[9]:
-                x = np.sort(j[3:9])
-                tqdm.write(f"Found match: {j[0:3]} {x} {j[9]} -- {i[0:6]} {i[6]} == {sum}")
-            elif sum >= threshold and i[6] == j[9]:
-                x = np.sort(j[3:9])
-                tqdm.write(f"Found match: {j[0:3]} {x} {j[9]} -- {i[0:6]} {i[6]} == {sum} with SuperNum")
+            matches = add_matches(matches, j[0], j[1], j[2],
+                                  i[0:6], j[3:9], threshold, sz, j[9])
+    matches.sort(key=lambda x: x["date_"])
+    return matches
 
 
 def check_num_49_vs(used_df, df, threshold=6, date_threshold=0):
@@ -272,12 +308,14 @@ def check_num_49_vs(used_df, df, threshold=6, date_threshold=0):
     l2 = pd.read_csv(used_df, sep=",").values
     vs = used_df.split(".")[0].split("aus")[-1]
     l1 = l1[l1.iloc[:, 2] >= date_threshold].values
+    matches = []
     for i in tqdm(l2, desc=f"Checking Lotto49 VS 6aus{vs}"):
+        sz = i[-1]
         for j in l1:
-            sum = np.isin(i[:len(i)-1], j[3:9]).sum()
-            common = np.intersect1d(i[:len(i)-1], j[3:9])
-            if sum >= threshold:
-                tqdm.write(f"Found: {j[0:3]} {np.sort(j[3:9])} {j[9]} == {sum} | {i} -- {common}")
+            matches = add_matches(matches, j[0], j[1], j[2],
+                                  i[:len(i)-1], j[3:9], threshold, sz, j[9])
+    matches.sort(key=lambda x: x["date_"])
+    return matches
 
 
 def check_num_49_ts(used_df, df, threshold=6, date_threshold=0):
@@ -288,61 +326,213 @@ def check_num_49_ts(used_df, df, threshold=6, date_threshold=0):
     with open(TS_PATTERN, "r") as f:
         all_patterns = json.load(f)
     pattern = all_patterns.get(ts, [])
+    matches = []
     for x in tqdm(l2, desc=f"Checking Lotto49 TS {ts}"):
         sets = [[x[i - 1] for i in s] for s in pattern]
         sets = np.array([sorted(s) for s in sets])
+        sz = x[-1]
         for s in tqdm(sets, leave=False):
             for j in l1:
-                sum = np.isin(s[:len(s)-1], j[3:9]).sum()
-                common = np.intersect1d(s[:len(s)-1], j[3:9])
-                if sum >= threshold:
-                    tqdm.write(f"Found: {j[0:3]} {np.sort(j[3:9])} {j[9]} == {sum} | {s} -- {common}")
+                matches = add_matches(matches, j[0], j[1], j[2],
+                                      s, j[3:9], threshold, sz, j[9])
+    matches.sort(key=lambda x: x["date_"])
+    return matches
 
 
 def check_num_all_ts(df, file_pattern, threshold=6, date_threshold=0):
     f = glob.glob(f"{CSV_PATH}/{file_pattern}*.csv")
+    l = []
     for i in f:
-        check_num_49_ts(i, df, threshold, date_threshold)
+        l.append(check_num_49_ts(i, df, threshold, date_threshold))
+    return l
 
 
 def check_num_all_vs(df, file_pattern, threshold=6, date_threshold=0):
     f = glob.glob(f"{CSV_PATH}/{file_pattern}*.csv")
+    l = []
     for i in f:
-        check_num_49_vs(i, df, threshold, date_threshold)
+        l.append(check_num_49_vs(i, df, threshold, date_threshold))
+    return l
 
 
 def check_num_all_49(df, fp_ts, fp_vs, threshold=6, date_threshold=0):
-    check_num_all_ts(df, fp_ts, threshold, date_threshold)
-    check_num_all_vs(df, fp_vs, threshold, date_threshold)
+    return check_num_all_ts(df, fp_ts, threshold, date_threshold) + check_num_all_vs(df, fp_vs, threshold, date_threshold)
 
 
 def check_num_euro(used_df, df, threshold=5, date_threshold=0):
     e1 = pd.read_csv(df, sep="\t")
     e2 = pd.read_csv(used_df, sep=",").values
     e1 = e1[e1.iloc[:, 2] >= date_threshold].values
+    matches = []
     for i in tqdm(e2, desc="Checking Eurojackpot"):
         for j in e1:
-            sum = np.isin(i[0:5], j[3:8]).sum()
-            if sum >= threshold and np.isin(i[5:7], j[8:10]).sum() >= 2:
-                x = np.sort(j[3:8])
-                y = np.sort(j[8:10])
-                tqdm.write(f"Found match: {j[0:3]} {x} {y} -- {i[0:5]} {i[5:7]} == {sum} with SuperNums")
-            elif sum >= threshold:
-                x = np.sort(j[3:8])
-                y = np.sort(j[8:10])
-                tqdm.write(f"Found match: {j[0:3]} {x} {y} -- {i[0:5]} {i[5:7]} == {sum}")
+            matches = add_matches(matches, j[0], j[1], j[2],
+                                  i[0:5], j[3:8], threshold, i[5:7], j[8:10])
+    matches.sort(key=lambda x: x["date_"])
+    return matches
 
 
 def check_num_keno(used_df, df, threshold=10, date_threshold=0):
     k1 = pd.read_csv(df, sep="\t").drop(["VA"], axis=1)
     k2 = pd.read_csv(used_df, sep=",").values
     k1 = k1[k1.iloc[:, 2] >= date_threshold].values
+    matches = []
     for i in tqdm(k2, desc="Checking Keno"):
         for j in k1:
-            s = np.isin(i, j[3::]).sum()
-            if s >= threshold:
-                x = np.sort(j[3::])
-                tqdm.write(f"Found match: {j[0:3]} {x} {i} | {s}")
+            matches = add_matches(matches, j[0], j[1], j[2],
+                                  i[0:5], j[3:8], threshold)
+    matches.sort(key=lambda x: x["date_"])
+    return matches
+
+
+def add_matches(matches, day, month, year, current_numbers, historical_set, threshold=3, current_supernum=None, historical_supernum=None):
+    """
+    Compare two lottery number sets and append matching draw information if they
+    meet the required similarity threshold.
+
+    The function counts how many lottery numbers in ``current_numbers`` are also present in
+    ``historical_set``. If the number of matching values is greater than or equal to
+    ``threshold``, a dictionary containing the draw date, matching statistics,
+    and common numbers is appended to ``matches``.
+
+    Parameters
+    ----------
+    matches : list
+        List of dictionaries describing matching lottery draws.
+    day : int or str
+        Day of the draw.
+    month : int or str
+        Month of the draw.
+    year : int or str
+        Year of the draw.
+    current_numbers : array-like
+        Lottery numbers being compared.
+    historical_set : array-like
+        Already drawn sorted lottery numbers.
+    current_supernum : array-like or scalar
+        Super number(s) associated with ``current_numbers``.
+    historical_supernum : array-like or scalar
+        Sorted Super number(s) associated with the drawn numbers (``historical_set``).
+    threshold : int
+        Minimum number of matching lottery numbers required before a match is
+        recorded.
+
+    Returns
+    -------
+    list
+        The updated ``matches`` list.
+
+    Notes
+    -----
+    Each appended dictionary contains the following keys:
+
+    - ``date_`` : ``datetime`` object representing the draw date.
+    - ``date`` : Draw date formatted as ``DD.MM.YYYY``.
+    - ``numbers`` : The candidate lottery numbers (``current_numbers``).
+    - ``supernum`` : Super number(s) associated with ``current_numbers``.
+    - ``historical_numbers`` : The already drawn lottery numbers (``historical_set``).
+    - ``historical_supernum`` : Super number(s) associated with ``historical_set``.
+    - ``num_sum`` : Number of matching lottery numbers.
+    - ``super_sum`` : Number of matching super numbers.
+    - ``common`` : NumPy array containing the lottery numbers common to both sets.
+    """
+
+    num_sum = int(np.isin(current_numbers, historical_set).sum())
+    if num_sum >= threshold:
+        if isinstance(historical_supernum, np.ndarray):
+            historical_supernum = np.sort(historical_supernum)
+        super_sum = 0 if current_supernum is None or historical_supernum is None else int(
+            np.isin(current_supernum, historical_supernum).sum())
+        common = np.intersect1d(current_numbers, historical_set)
+        date = datetime(int(year), int(month), int(day))
+        matches.append({
+            "date_": date,
+            "date": date.strftime("%d.%m.%Y"),
+            "numbers": current_numbers,
+            "supernum": current_supernum,
+            "historical_numbers": np.sort(historical_set),
+            "historical_supernum": historical_supernum,
+            "num_sum": num_sum,
+            "super_sum": super_sum,
+            "common": common
+        })
+
+    return matches
+
+
+def print_matches(matches: list):
+    if not matches:
+        return
+
+    for match in matches:
+        num_sum = match["num_sum"]
+        super_sum = match["super_sum"]
+        historical_len = len(match["historical_numbers"])
+
+        if (
+            (super_sum == 1 and num_sum == 6 and historical_len == 6)
+            or (super_sum == 2 and num_sum == 5 and historical_len == 5)
+        ):
+            emoji = "🔔🔔 💯 🔔🔔"
+
+        elif (
+            (super_sum == 0 and num_sum == 6 and historical_len == 6)
+            or (super_sum == 1 and num_sum == 5 and historical_len == 5)
+        ):
+            emoji = "🔥"
+
+        elif super_sum == 0 and num_sum == 5:
+            emoji = "⭕️"
+
+        elif super_sum >= 2:
+            emoji = "🟡 🟡"
+
+        elif super_sum == 1:
+            emoji = "🟡"
+
+        else:
+            emoji = ""
+
+        if match["supernum"] is None and match["historical_supernum"] is None:
+            print(
+                f'Found: {match["date"]} {match["historical_numbers"]}'
+                f' | {match["numbers"]} -- {num_sum} == {match["common"]} {emoji}'
+            )
+
+        elif match["supernum"] is None:
+            print(
+                f'Found: {match["date"]} {match["historical_numbers"]} '
+                f'{match["historical_supernum"]}'
+                f' | {match["numbers"]} -- {num_sum} == {match["common"]} {emoji}'
+            )
+
+        else:
+            print(
+                f'Found: {match["date"]} {match["historical_numbers"]} '
+                f'{match["historical_supernum"]}'
+                f' | {match["numbers"]} {match["supernum"]}'
+                f' == {match["common"]} {emoji}'
+            )
+
+
+def clean_history(history: list):
+    clean_history = []
+    for item in history:
+        rows = item if isinstance(item, list) else [item]
+
+        for row in rows:
+            clean_history.append({
+                "date_": row["date_"].isoformat() if hasattr(row["date_"], "isoformat") else row["date_"],
+                "date": row["date"],
+                "numbers": row["numbers"].tolist(),
+                "supernum": row["supernum"].tolist(),
+                "historical_numbers": row["historical_numbers"].tolist(),
+                "historical_supernum": row["historical_supernum"].tolist(),
+                "num_sum": int(row["num_sum"]),
+                "super_sum": int(row["super_sum"]),
+                "common": row["common"].tolist(),
+            })
+    return clean_history
 
 
 def get_sets(arr, ts="", set_len=6):
@@ -365,20 +555,22 @@ def get_gewinnklassen(arr, winning_set, ts="", set_len=6, supernum=0, type="49")
     gewinnklassen_49 = {
         (6, 1): "1 💯", (6, 0): "2 🔥", (5, 1): "3 ⭕️", (5, 0): "4 ♨️",
         (4, 1): "5 💤", (4, 0): "6", (3, 1): "7", (3, 0): "8", (2, 1): "9"
-     }
+    }
     gewinnklassen_output = []
     if type == "49":
         for i in all_combs:
             common = np.intersect1d(i, winning_set)
             sum = len(common)
-            if (sum > 1 and supernum >=1) or sum >= 3:
-                gewinnklassen_output.append(f"{i} -- {winning_set} -- {common} - Gewinnklasse {gewinnklassen_49[(sum, supernum)]}")
+            if (sum > 1 and supernum >= 1) or sum >= 3:
+                gewinnklassen_output.append(
+                    f"{i} -- {winning_set} -- {common} - Gewinnklasse {gewinnklassen_49[(sum, supernum)]}")
     elif type == "euro":
         for i in all_combs:
             common = np.intersect1d(i, winning_set)
             sum = len(common)
             if (sum > 0 and supernum > 1) or (sum >= 2 and supernum >= 1):
-                gewinnklassen_output.append(f"{i} - Gewinnklasse {gewinnklassen_euro[(sum, supernum)]}")
+                gewinnklassen_output.append(
+                    f"{i} - Gewinnklasse {gewinnklassen_euro[(sum, supernum)]}")
     for i in gewinnklassen_output:
         print(f"{i}")
     return gewinnklassen_output
