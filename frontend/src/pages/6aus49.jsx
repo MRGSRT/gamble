@@ -72,7 +72,7 @@ export default function Lotto6aus49() {
           className="font-bold text-white"
           onClick={column.getToggleSortingHandler()}
         >
-          Date{" "}
+          Datum{" "}
           {column.getIsSorted() === "asc" && "↑"}
           {column.getIsSorted() === "desc" && "↓"}
         </button>
