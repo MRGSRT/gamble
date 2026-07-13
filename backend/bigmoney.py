@@ -344,7 +344,7 @@ def check_num_all_ts(df, file_pattern, threshold=6, date_threshold=0):
     l = []
     for i in f:
         l.append(check_num_49_ts(i, df, threshold, date_threshold))
-    return l
+    return [i for sublist in l for i in sublist]
 
 
 def check_num_all_vs(df, file_pattern, threshold=6, date_threshold=0):
@@ -352,7 +352,7 @@ def check_num_all_vs(df, file_pattern, threshold=6, date_threshold=0):
     l = []
     for i in f:
         l.append(check_num_49_vs(i, df, threshold, date_threshold))
-    return l
+    return [i for sublist in l for i in sublist]
 
 
 def check_num_all_49(df, fp_ts, fp_vs, threshold=6, date_threshold=0):
