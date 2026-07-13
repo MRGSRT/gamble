@@ -8,8 +8,8 @@ export default function Analytics() {
         eurojackpot: `${API}/heatmap_eurojackpot`,
         lotto6aus49_superzahl: `${API}/heatmap_lotto6aus49_superzahl`,
         eurojackpot_eurozahl: `${API}/heatmap_eurojackpot_eurozahl`,
-        lotto6aus49_not_drawn: `${API}/heatmap_lotto6aus49_not_drawn`,
-        eurojackpot_not_drawn: `${API}/heatmap_eurojackpot_not_drawn`,
+        lotto6aus49_not_drawn_since: `${API}/heatmap_lotto6aus49_not_drawn_since`,
+        eurojackpot_not_drawn_since: `${API}/heatmap_eurojackpot_not_drawn_since`,
     };
 
     const initialState = Object.keys(endpoints).reduce((acc, key) => {
@@ -67,10 +67,10 @@ export default function Analytics() {
     const minPct4 = Math.min(...state.lotto6aus49_superzahl.map(d => d.percent));
     const maxPct4 = Math.max(...state.lotto6aus49_superzahl.map(d => d.percent));
 
-    const minPct6 = state.lotto6aus49_not_drawn.length > 0 ? Math.min(...state.lotto6aus49_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 0;
-    const maxPct6 = state.lotto6aus49_not_drawn.length > 0 ? Math.max(...state.lotto6aus49_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 100;
-    const minPct7 = state.eurojackpot_not_drawn.length > 0 ? Math.min(...state.eurojackpot_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 0;
-    const maxPct7 = state.eurojackpot_not_drawn.length > 0 ? Math.max(...state.eurojackpot_not_drawn.map(d => d.last_drawn).filter(d => d >= 0)) : 100;
+    const minPct6 = state.lotto6aus49_not_drawn_since.length > 0 ? Math.min(...state.lotto6aus49_not_drawn_since.map(d => d.last_drawn).filter(d => d >= 0)) : 0;
+    const maxPct6 = state.lotto6aus49_not_drawn_since.length > 0 ? Math.max(...state.lotto6aus49_not_drawn_since.map(d => d.last_drawn).filter(d => d >= 0)) : 100;
+    const minPct7 = state.eurojackpot_not_drawn_since.length > 0 ? Math.min(...state.eurojackpot_not_drawn_since.map(d => d.last_drawn).filter(d => d >= 0)) : 0;
+    const maxPct7 = state.eurojackpot_not_drawn_since.length > 0 ? Math.max(...state.eurojackpot_not_drawn_since.map(d => d.last_drawn).filter(d => d >= 0)) : 100;
 
     return (
         <div className="min-h-screen bg-gray-300 p-8 flex flex-col items-center">
@@ -243,7 +243,7 @@ export default function Analytics() {
                                 {Array.from({ length: 49 }, (_, i) => {
                                     const number = i + 1;
 
-                                    const item = state.lotto6aus49_not_drawn.find(
+                                    const item = state.lotto6aus49_not_drawn_since.find(
                                         d => d.type === "main" && d.number === number
                                     );
 
@@ -275,7 +275,7 @@ export default function Analytics() {
                                 {Array.from({ length: 10 }, (_, i) => {
                                     const number = i;
 
-                                    const item = state.lotto6aus49_not_drawn.find(
+                                    const item = state.lotto6aus49_not_drawn_since.find(
                                         d => d.type === "super" && d.number === number
                                     );
 
@@ -312,7 +312,7 @@ export default function Analytics() {
                                 {Array.from({ length: 50 }, (_, i) => {
                                     const number = i + 1;
 
-                                    const item = state.eurojackpot_not_drawn.find(
+                                    const item = state.eurojackpot_not_drawn_since.find(
                                         d => d.type === "main" && d.number === number
                                     );
 
@@ -344,7 +344,7 @@ export default function Analytics() {
                                 {Array.from({ length: 12 }, (_, i) => {
                                     const number = i + 1;
 
-                                    const item = state.eurojackpot_not_drawn.find(
+                                    const item = state.eurojackpot_not_drawn_since.find(
                                         d => d.type === "euro" && d.number === number
                                     );
 

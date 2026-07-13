@@ -185,8 +185,8 @@ def heatmap_lotto6aus49_superzahl():
         return {"error": str(e)}
 
 
-@app.get("/heatmap_lotto6aus49_not_drawn")
-def heatmap_lotto6aus49_not_drawn():
+@app.get("/heatmap_lotto6aus49_not_drawn_since")
+def heatmap_lotto6aus49_not_drawn_since():
     try:
         df = pd.read_csv(L49file, sep="\t")
         z_mask = {i: -1 for i in range(1, 50)}
@@ -220,8 +220,8 @@ def heatmap_lotto6aus49_not_drawn():
         return {"error": str(e)}
 
 
-@app.get("/heatmap_eurojackpot_not_drawn")
-def heatmap_eurojackpot_not_drawn():
+@app.get("/heatmap_eurojackpot_not_drawn_since")
+def heatmap_eurojackpot_not_drawn_since():
     try:
         df = pd.read_csv(EJfile, sep="\t")
         z_mask = {i: -1 for i in range(1, 51)}
