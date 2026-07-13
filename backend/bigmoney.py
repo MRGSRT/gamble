@@ -501,21 +501,21 @@ def print_matches(matches: list):
         if keno:
             print(
                 f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<20}'
-                f' | {str(match["numbers"]):<26} {str(match["common"]):>12} {emoji:<8}'
+                f' {str(match["numbers"]):<26} {str(match["common"]):>12} {emoji:<8}'
             )
 
         elif match["supernum"] is None:
             print(
                 f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
-                f'{str(match["historical_supernum"]):<2}'
-                f' | {str(match["numbers"]):<11} {str(match["common"]):>12} {emoji:<8}'
+                f'{str(match["historical_supernum"]):<8}'
+                f' {str(match["numbers"]):<11} {str(match["common"]):>12} {emoji:<8}'
             )
 
         else:
             print(
                 f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
-                f'{str(match["historical_supernum"]):<2}'
-                f' | {str(match["numbers"]):<11} {str(str(match["supernum"])):<2}'
+                f'{str(match["historical_supernum"]):<8}'
+                f' {str(match["numbers"]):<11} {str(str(match["supernum"])):<8}'
                 f' == {str(match["common"]):>12} {emoji:<8}'
             )
 
