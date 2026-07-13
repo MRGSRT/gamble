@@ -85,7 +85,7 @@ export default function Lotto6aus49() {
     },
     {
       accessorKey: "historical_numbers",
-      header: "Nummern",
+      header: "Zahlen",
       cell: ({ row }) => (
         <div className="flex gap-1">
           {row.original.historical_numbers.map((n, i) => (
@@ -175,8 +175,7 @@ export default function Lotto6aus49() {
       <div className="w-full mx-auto flex gap-6 items-start">
         {/* Card */}
         <div className="bg-gray-200 shadow-xl rounded-lg p-6 flex-1 flex flex-col items-center gap-8">
-
-          {/* Title */}
+          
           <h1 className="text-black text-3xl font-bold">6 aus 49</h1>
 
           <div className="flex gap-4 justify-center">
