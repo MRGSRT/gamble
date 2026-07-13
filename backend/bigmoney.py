@@ -306,7 +306,7 @@ def check_num_49(used_df, df, threshold=6, date_threshold=0):
 def check_num_49_vs(used_df, df, threshold=6, date_threshold=0):
     l1 = pd.read_csv(df, sep="\t").drop(["Zusatz"], axis=1)
     l2 = pd.read_csv(used_df, sep=",").values
-    vs = used_df.split(".")[0].split("aus")[-1]
+    vs = used_df.split("6aus")[-1].split(".")[0]
     l1 = l1[l1.iloc[:, 2] >= date_threshold].values
     matches = []
     for i in tqdm(l2, desc=f"Checking Lotto49 VS 6aus{vs}"):
@@ -344,6 +344,7 @@ def check_num_all_ts(df, file_pattern, threshold=6, date_threshold=0):
     l = []
     for i in f:
         l.append(check_num_49_ts(i, df, threshold, date_threshold))
+        print_matches(check_num_49_ts(i, df, threshold, date_threshold))
     return [i for sublist in l for i in sublist]
 
 
@@ -352,6 +353,7 @@ def check_num_all_vs(df, file_pattern, threshold=6, date_threshold=0):
     l = []
     for i in f:
         l.append(check_num_49_vs(i, df, threshold, date_threshold))
+        print_matches(check_num_49_vs(i, df, threshold, date_threshold))
     return [i for sublist in l for i in sublist]
 
 
@@ -380,7 +382,7 @@ def check_num_keno(used_df, df, threshold=10, date_threshold=0):
     for i in tqdm(k2, desc="Checking Keno"):
         for j in k1:
             matches = add_matches(matches, j[0], j[1], j[2],
-                                  i[0:5], j[3:8], threshold)
+                                  i, j[3:], threshold)
     matches.sort(key=lambda x: x["date_"])
     return matches
 
@@ -467,21 +469,24 @@ def print_matches(matches: list):
     for match in matches:
         num_sum = match["num_sum"]
         super_sum = match["super_sum"]
-        historical_len = len(match["historical_numbers"])
+        historical_len = len(str(match["historical_numbers"]))
+        keno = match["supernum"] is None and match["historical_supernum"] is None
 
         if (
             (super_sum == 1 and num_sum == 6 and historical_len == 6)
             or (super_sum == 2 and num_sum == 5 and historical_len == 5)
+            or num_sum == 10
         ):
             emoji = "🔔🔔 💯 🔔🔔"
 
         elif (
             (super_sum == 0 and num_sum == 6 and historical_len == 6)
             or (super_sum == 1 and num_sum == 5 and historical_len == 5)
+            or num_sum == 9
         ):
             emoji = "🔥"
 
-        elif super_sum == 0 and num_sum == 5:
+        elif super_sum == 0 and num_sum == 5 and not keno:
             emoji = "⭕️"
 
         elif super_sum >= 2:
@@ -493,25 +498,25 @@ def print_matches(matches: list):
         else:
             emoji = ""
 
-        if match["supernum"] is None and match["historical_supernum"] is None:
+        if keno:
             print(
-                f'Found: {match["date"]} {match["historical_numbers"]}'
-                f' | {match["numbers"]} -- {num_sum} == {match["common"]} {emoji}'
+                f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<20}'
+                f' | {str(match["numbers"]):<26} {str(match["common"]):>12} {emoji:<8}'
             )
 
         elif match["supernum"] is None:
             print(
-                f'Found: {match["date"]} {match["historical_numbers"]} '
-                f'{match["historical_supernum"]}'
-                f' | {match["numbers"]} -- {num_sum} == {match["common"]} {emoji}'
+                f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
+                f'{str(match["historical_supernum"]):<2}'
+                f' | {str(match["numbers"]):<11} {str(match["common"]):>12} {emoji:<8}'
             )
 
         else:
             print(
-                f'Found: {match["date"]} {match["historical_numbers"]} '
-                f'{match["historical_supernum"]}'
-                f' | {match["numbers"]} {match["supernum"]}'
-                f' == {match["common"]} {emoji}'
+                f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
+                f'{str(match["historical_supernum"]):<2}'
+                f' | {str(match["numbers"]):<11} {str(str(match["supernum"])):<2}'
+                f' == {str(match["common"]):>12} {emoji:<8}'
             )
 
 
