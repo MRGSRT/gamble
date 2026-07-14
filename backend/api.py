@@ -323,7 +323,7 @@ def random_6aus49(button: int = 6, mode: int = 1, threshold: int = 4):
             history.append(lotto49.check_history(threshold, ts=f"{button}"))
         case 3:
             lotto49.choose(button)
-            setlist = get_sets(lotto49.set)
+            setlist.append(lotto49.set)
             supernum.append(lotto49.num)
             history.append(lotto49.check_history(threshold))
         case _:
