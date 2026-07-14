@@ -291,7 +291,7 @@ export default function DrawHistory() {
         <div className="bg-gray-200 shadow-xl rounded-lg p-6">
           {/* Title */}
           <h1 className="text-black text-3xl font-bold mb-6 text-center">
-            Gezogene Nummern
+            Gewinnzahlen
           </h1>
 
           {/* Tab Navigation */}

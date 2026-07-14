@@ -23,7 +23,7 @@ function App() {
         <div className="flex-none gap-2">
 
           <Link to="/Numbers-Drawn" className="btn btn-ghost hover:bg-red-500 text-white">
-            Numbers Drawn
+            Gewinnzahlen
           </Link>
 
           <Link to="/Analytics" className="btn btn-ghost hover:bg-red-500 text-white">
