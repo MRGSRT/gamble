@@ -343,8 +343,9 @@ def check_num_all_ts(df, file_pattern, threshold=6, date_threshold=0):
     f = glob.glob(f"{CSV_PATH}/{file_pattern}*.csv")
     l = []
     for i in f:
-        l.append(check_num_49_ts(i, df, threshold, date_threshold))
-        print_matches(check_num_49_ts(i, df, threshold, date_threshold))
+        a = check_num_49_vs(i, df, threshold, date_threshold)
+        l.append(a)
+        print_matches(a)
     return [i for sublist in l for i in sublist]
 
 
@@ -352,8 +353,9 @@ def check_num_all_vs(df, file_pattern, threshold=6, date_threshold=0):
     f = glob.glob(f"{CSV_PATH}/{file_pattern}*.csv")
     l = []
     for i in f:
-        l.append(check_num_49_vs(i, df, threshold, date_threshold))
-        print_matches(check_num_49_vs(i, df, threshold, date_threshold))
+        a = check_num_49_vs(i, df, threshold, date_threshold)
+        l.append(a)
+        print_matches(a)
     return [i for sublist in l for i in sublist]
 
 
@@ -467,57 +469,59 @@ def print_matches(matches: list):
         return
 
     for match in matches:
-        num_sum = match["num_sum"]
-        super_sum = match["super_sum"]
-        historical_len = len(str(match["historical_numbers"]))
-        keno = match["supernum"] is None and match["historical_supernum"] is None
+        try:
+            num_sum = match["num_sum"]
+            super_sum = match["super_sum"]
+            historical_len = len((match["historical_numbers"]))
+            keno = match["supernum"] is None and match["historical_supernum"] is None
+            if (
+                (super_sum == 1 and num_sum == 6 and historical_len == 6)
+                or (super_sum == 2 and num_sum == 5 and historical_len == 5)
+                or num_sum == 10
+            ):
+                emoji = "🔔🔔 💯 🔔🔔"
 
-        if (
-            (super_sum == 1 and num_sum == 6 and historical_len == 6)
-            or (super_sum == 2 and num_sum == 5 and historical_len == 5)
-            or num_sum == 10
-        ):
-            emoji = "🔔🔔 💯 🔔🔔"
+            elif (
+                (super_sum == 0 and num_sum == 6 and historical_len == 6)
+                or (super_sum == 1 and num_sum == 5 and historical_len == 5)
+                or num_sum == 9
+            ):
+                emoji = "🔥"
 
-        elif (
-            (super_sum == 0 and num_sum == 6 and historical_len == 6)
-            or (super_sum == 1 and num_sum == 5 and historical_len == 5)
-            or num_sum == 9
-        ):
-            emoji = "🔥"
+            elif super_sum == 0 and num_sum == 5 and not keno:
+                emoji = "⭕️"
 
-        elif super_sum == 0 and num_sum == 5 and not keno:
-            emoji = "⭕️"
+            elif super_sum >= 2:
+                emoji = "🟡 🟡"
 
-        elif super_sum >= 2:
-            emoji = "🟡 🟡"
+            elif super_sum == 1:
+                emoji = "🟡"
 
-        elif super_sum == 1:
-            emoji = "🟡"
+            else:
+                emoji = ""
 
-        else:
-            emoji = ""
+            if keno:
+                print(
+                    f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<20}'
+                    f' {str(match["numbers"]):<26} {str(match["common"]):>12} {emoji:<8}'
+                )
 
-        if keno:
-            print(
-                f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<20}'
-                f' {str(match["numbers"]):<26} {str(match["common"]):>12} {emoji:<8}'
-            )
+            elif match["supernum"] is None:
+                print(
+                    f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
+                    f'{str(match["historical_supernum"]):<8}'
+                    f' {str(match["numbers"]):<11} {str(match["common"]):>12} {emoji:<8}'
+                )
 
-        elif match["supernum"] is None:
-            print(
-                f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
-                f'{str(match["historical_supernum"]):<8}'
-                f' {str(match["numbers"]):<11} {str(match["common"]):>12} {emoji:<8}'
-            )
-
-        else:
-            print(
-                f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
-                f'{str(match["historical_supernum"]):<8}'
-                f' {str(match["numbers"]):<11} {str(str(match["supernum"])):<8}'
-                f' == {str(match["common"]):>12} {emoji:<8}'
-            )
+            else:
+                print(
+                    f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
+                    f'{str(match["historical_supernum"]):<8}'
+                    f' {str(match["numbers"]):<11} {str(str(match["supernum"])):<8}'
+                    f' == {str(match["common"]):>12} {emoji:<8}'
+                )
+        except:
+            pass
 
 
 def clean_history(history: list):
