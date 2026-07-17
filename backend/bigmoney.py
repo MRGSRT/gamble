@@ -343,7 +343,7 @@ def check_num_all_ts(df, file_pattern, threshold=6, date_threshold=0):
     f = glob.glob(f"{CSV_PATH}/{file_pattern}*.csv")
     l = []
     for i in f:
-        a = check_num_49_vs(i, df, threshold, date_threshold)
+        a = check_num_49_ts(i, df, threshold, date_threshold)
         l.append(a)
         print_matches(a)
     return [i for sublist in l for i in sublist]
