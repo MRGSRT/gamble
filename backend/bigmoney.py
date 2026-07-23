@@ -62,7 +62,7 @@ class Lotto49(Lotto):
             sets = np.array([sorted(s) for s in sets])
             for i in range(len(sets) - 1):
                 for j in range(num.shape[0]):
-                    new_matches = add_matches(matches, orig[i][0], orig[i][1], orig[i][2],
+                    new_matches = add_matches(matches, orig[j][0], orig[j][1], orig[j][2],
                                               sets[i], num[j], threshold, self.num, supernum[j])
                     if matches != new_matches:
                         self.unique = False
