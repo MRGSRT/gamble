@@ -183,6 +183,10 @@ def format_CSVs(dir):
         merge_rows_inplace(file)
 
 
+def is_in(set, subset):
+    return all(x in set.tolist() for x in subset)
+
+
 if __name__ == "__main__":
     load_dotenv()
     download_archives([os.getenv("LOTTO_49_URL"), os.getenv("EUROJACKPOT_URL"), os.getenv("KENO_URL"), os.getenv("GS_S77_S6_URL")])

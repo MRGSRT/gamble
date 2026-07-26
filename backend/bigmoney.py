@@ -591,8 +591,7 @@ def get_gewinnklassen_from_csv(df, winning_set, ts="", set_len=6, supernum=0):
         get_gewinnklassen(i, winning_set, ts, set_len, supernum)
 
 
-def is_in(set, subset):
-    return all(x in set.tolist() for x in subset)
+
 
 
 if __name__ == "__main__":
