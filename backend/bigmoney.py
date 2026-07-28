@@ -198,6 +198,77 @@ class Keno(Lotto):
         f.close()
 
 
+class Spiel77(Lotto):
+
+    def __init__(self, file):
+        super().__init__(file)
+
+    def choose(self):
+        np.random.default_rng()
+        self.set = np.random.choice(
+            [i for i in range(10)], 7)
+
+    def check_history(self, threshold=5):
+        self.unique = True
+        df = pd.read_csv(self.history, sep="\t", dtype=str).values
+        n = "".join(map(str, self.set))
+        matches = []
+        for i in range(df.shape[0]):
+            matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
+                                     n, df[i][3], threshold)
+
+        matches.sort(key=lambda x: x["date_"])
+        return matches
+
+    def check_history_and_print(self, threshold=5):
+        matches = self.check_history(threshold)
+        print_matches(matches)
+        self.print()
+
+    def print(self):
+        print(f"Set: {self.set}\n")
+
+    def write_down(self, file):
+        with open(file, "a") as f:
+            f.write("".join(map(str, self.set)) + "\n")
+        f.close()
+
+
+class Super6(Spiel77):
+
+    def __init__(self, file):
+        super().__init__(file)
+
+    def choose(self):
+        np.random.default_rng()
+        self.set = np.random.choice(
+            [i for i in range(10)], 6)
+
+
+class Glücksrad(Spiel77):
+
+    def __init__(self, file):
+        super().__init__(file)
+
+    def check_history(self, threshold=6):
+        orig = pd.read_csv(self.history, sep="\t").values
+        num = (pd.read_csv(self.history, sep="\t", dtype=str).
+               drop(["Tag", "Monat", "Jahr", "VA", "Spieleinsatz(EUR)"], axis=1).
+               values)
+
+        n = "".join(map(str, self.set))
+        matches = []
+        for i in range(num.shape[0]):
+            for j in range(num.shape[1]):
+                if type(num[i][j]) == float:
+                    continue
+                matches = add_matches_tn(matches, orig[i][0], orig[i][1], orig[i][2],
+                                         n, num[i][j], threshold, full_suffix=True)
+
+        matches.sort(key=lambda x: x["date_"])
+        return matches
+
+
 def show_dups(file):
     if "6aus49" in file:
         print("6aus49")
@@ -284,8 +355,8 @@ def check_num(file, arr, sz=None, threshold_49=6, threshold_euro=5, threshold_ke
 
 
 def check_used_num(used_euro, used_49, used_keno, EJ, L49, K, threshold_49=6, threshold_euro=5, threshold_keno=10, date_threshold=0):
-    return (check_num_49(used_49, L49, threshold_49, date_threshold),
-            check_num_euro(used_euro, EJ, threshold_euro, date_threshold),
+    return (check_num_euro(used_euro, EJ, threshold_euro, date_threshold),
+            check_num_49(used_49, L49, threshold_49, date_threshold),
             check_num_keno(used_keno, K, threshold_keno, date_threshold))
 
 
@@ -464,64 +535,149 @@ def add_matches(matches, day, month, year, current_numbers, historical_set, thre
     return matches
 
 
+def common_suffix_length(s1, s2, full_suffix=False):
+    if full_suffix:
+        return len(s2) if s1.endswith(s2) else 0
+
+    count = 0
+    for a, b in zip(reversed(s1), reversed(s2)):
+        if a == b:
+            count += 1
+        else:
+            break
+
+    return count
+
+
+def add_matches_tn(matches, day, month, year, current_numbers, historical_num,
+                   threshold=6, full_suffix=False):
+
+    num_sum = common_suffix_length(
+        current_numbers,
+        historical_num,
+        full_suffix=full_suffix
+    )
+
+    if num_sum >= threshold:
+        date = datetime(int(year), int(month), int(day))
+        matches.append({
+            "date_": date,
+            "date": date.strftime("%d.%m.%Y"),
+            "number": np.array(list(current_numbers), dtype=int),
+            "historical_number": np.array(list(historical_num), dtype=int),
+            "num_sum": num_sum,
+        })
+
+    return matches
+
+
+def check_num_tn(df, n, type="gs", threshold=5):
+    try:
+        df = pd.read_csv(df, sep="\t", dtype=str).values
+        n = "".join(map(str, n)) if isinstance(n, list) else n
+        matches = []
+
+        match type:
+            case "gs":
+                print("Glücksrad")
+                for i in range(df.shape[0]):
+                    matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
+                                             n, df[i][3], threshold, full_suffix=True)
+            case "s77":
+                print("Spiel77")
+                for i in range(df.shape[0]):
+                    matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
+                                             n, df[i][3], threshold)
+            case "s6":
+                print("Super6")
+                for i in range(df.shape[0]):
+                    matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
+                                             n, df[i][3], threshold)
+            case _:
+                pass
+        print_matches(matches)
+    except Exception as e:
+        print(f"{e}")
+
+
 def print_matches(matches: list):
     if not matches:
         return
 
-    for match in matches:
-        try:
-            num_sum = match["num_sum"]
-            super_sum = match["super_sum"]
-            historical_len = len((match["historical_numbers"]))
-            keno = match["supernum"] is None and match["historical_supernum"] is None
-            if (
-                (super_sum == 1 and num_sum == 6 and historical_len == 6)
-                or (super_sum == 2 and num_sum == 5 and historical_len == 5)
-                or num_sum == 10
-            ):
-                emoji = "🔔🔔 💯 🔔🔔"
+    for m in matches:
+        if "number" in m:
+            match m["num_sum"]:
+                case 7:
+                    emoji = "🔔🔔 💯 🔔🔔"
+                case 6:
+                    emoji = "🔥"
+                case 5:
+                    emoji = "♨️"
+                case 4:
+                    emoji = "💤"
+                case _:
+                    emoji = ""
+            print(
+                f'Found: {m["date"]:>12} {str(m["historical_number"]):<16}'
+                f' {str(m["number"]):<16} {str(m["num_sum"]):>2} {emoji:<8}'
+            )
+        else:
+            try:
+                num_sum = m["num_sum"]
+                super_sum = m["super_sum"]
+                historical_len = len((m["historical_numbers"]))
+                keno = m["supernum"] is None and m["historical_supernum"] is None
+                if (
+                    (super_sum == 1 and num_sum == 6 and historical_len == 6)
+                    or (super_sum == 2 and num_sum == 5 and historical_len == 5)
+                    or num_sum == 10
+                ):
+                    emoji = "🔔🔔 💯 🔔🔔"
 
-            elif (
-                (super_sum == 0 and num_sum == 6 and historical_len == 6)
-                or (super_sum == 1 and num_sum == 5 and historical_len == 5)
-                or num_sum == 9
-            ):
-                emoji = "🔥"
+                elif (
+                    (super_sum == 0 and num_sum == 6 and historical_len == 6)
+                    or (super_sum == 1 and num_sum == 5 and historical_len == 5)
+                    or num_sum == 9
+                ):
+                    emoji = "🔥"
 
-            elif super_sum == 0 and num_sum == 5 and not keno:
-                emoji = "⭕️"
+                elif super_sum == 0 and num_sum == 5 and not keno:
+                    emoji = "♨️"
 
-            elif super_sum >= 2:
-                emoji = "🟡 🟡"
+                elif super_sum >= 2:
+                    emoji = "🟡 🟡"
 
-            elif super_sum == 1:
-                emoji = "🟡"
+                elif super_sum == 1 and num_sum == 5:
+                    emoji = "⭕️"
 
-            else:
-                emoji = ""
+                elif super_sum == 1:
+                    emoji = "🟡"
 
-            if keno:
-                print(
-                    f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<20}'
-                    f' {str(match["numbers"]):<26} {str(match["common"]):>12} {emoji:<8}'
-                )
+                else:
+                    emoji = ""
 
-            elif match["supernum"] is None:
-                print(
-                    f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
-                    f'{str(match["historical_supernum"]):<8}'
-                    f' {str(match["numbers"]):<11} {str(match["common"]):>12} {emoji:<8}'
-                )
+                if keno:
+                    print(
+                        f'Found: {m["date"]:>12} {str(m["historical_numbers"]):<20}'
+                        f' {str(m["numbers"]):<26} {str(m["common"]):>12} {emoji:<8}'
+                    )
 
-            else:
-                print(
-                    f'Found: {match["date"]:>12} {str(match["historical_numbers"]):<6} '
-                    f'{str(match["historical_supernum"]):<8}'
-                    f' {str(match["numbers"]):<11} {str(str(match["supernum"])):<8}'
-                    f' == {str(match["common"]):>12} {emoji:<8}'
-                )
-        except:
-            pass
+                elif m["supernum"] is None:
+                    print(
+                        f'Found: {m["date"]:>12} {str(m["historical_numbers"]):<6} '
+                        f'{str(m["historical_supernum"]):<8}'
+                        f' {str(m["numbers"]):<11} {str(m["common"]):>12} {emoji:<8}'
+                    )
+
+                else:
+                    print(
+                        f'Found: {m["date"]:>12} {str(m["historical_numbers"]):<6} '
+                        f'{str(m["historical_supernum"]):<8}'
+                        f' {str(m["numbers"]):<11} {str(str(m["supernum"])):<8}'
+                        f' == {str(m["common"]):>12} {emoji:<8}'
+                    )
+            except Exception as e:
+                print(f"{e}")
 
 
 def clean_history(history: list):
@@ -540,6 +696,22 @@ def clean_history(history: list):
                 "num_sum": int(row["num_sum"]),
                 "super_sum": int(row["super_sum"]),
                 "common": row["common"].tolist(),
+            })
+    return clean_history
+
+
+def clean_history_tn(history: list):
+    clean_history = []
+    for item in history:
+        rows = item if isinstance(item, list) else [item]
+
+        for row in rows:
+            clean_history.append({
+                "date_": row["date_"].isoformat() if hasattr(row["date_"], "isoformat") else row["date_"],
+                "date": row["date"],
+                "number": row["number"].tolist(),
+                "historical_number": row["historical_number"].tolist(),
+                "num_sum": int(row["num_sum"]),
             })
     return clean_history
 
@@ -589,9 +761,6 @@ def get_gewinnklassen_from_csv(df, winning_set, ts="", set_len=6, supernum=0):
     df = pd.read_csv(df, sep=",").values
     for i in df:
         get_gewinnklassen(i, winning_set, ts, set_len, supernum)
-
-
-
 
 
 if __name__ == "__main__":

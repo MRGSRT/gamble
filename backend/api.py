@@ -46,7 +46,8 @@ def get_lotto6aus49_data():
         df = pd.read_csv(L49file, sep="\t")
         df = df.fillna(value="")
         # Sort by date descending (most recent first)
-        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
+        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(
+            columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
         df = df.sort_values('date', ascending=False)
         return df.to_dict(orient="records")
     except Exception as e:
@@ -59,7 +60,8 @@ def get_eurojackpot_data():
         df = pd.read_csv(EJfile, sep="\t")
         df = df.fillna(value="")
         # Sort by date descending (most recent first)
-        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
+        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(
+            columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
         df = df.sort_values('date', ascending=False)
         return df.to_dict(orient="records")
     except Exception as e:
@@ -71,7 +73,8 @@ def get_keno_data():
     try:
         df = pd.read_csv(Kfile, sep="\t")
         df = df.fillna(value="")
-        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
+        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(
+            columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
         df = df.sort_values('date', ascending=False)
         return df.to_dict(orient="records")
     except Exception as e:
@@ -83,7 +86,8 @@ def get_super6_data():
     try:
         df = pd.read_csv(Super6file, sep="\t")
         df = df.fillna(value="")
-        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
+        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(
+            columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
         df = df.sort_values('date', ascending=False)
         return df.to_dict(orient="records")
     except Exception as e:
@@ -95,7 +99,8 @@ def get_spiel77_data():
     try:
         df = pd.read_csv(Spiel77file, sep="\t")
         df = df.fillna(value="")
-        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
+        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(
+            columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
         df = df.sort_values('date', ascending=False)
         return df.to_dict(orient="records")
     except Exception as e:
@@ -108,7 +113,8 @@ def get_glücksrad_data():
         df = pd.read_csv(Glücksradfile, sep="\t")
         df = df.fillna(value="")
         df = df.drop(columns=["VA", "Spieleinsatz(EUR)"], errors="ignore")
-        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
+        df['date'] = pd.to_datetime(df[['Jahr', 'Monat', 'Tag']].rename(
+            columns={'Jahr': 'year', 'Monat': 'month', 'Tag': 'day'}))
         df = df.sort_values('date', ascending=False)
         return df.to_dict(orient="records")
     except Exception as e:
@@ -193,9 +199,11 @@ def heatmap_lotto6aus49_not_drawn_since():
         s_mask = {i: -1 for i in range(0, 10)}
         result = []
         for i, row in enumerate(df.iloc[::-1].itertuples(index=False)):
-            z = [row.Zahl1, row.Zahl2, row.Zahl3, row.Zahl4, row.Zahl5, row.Zahl6]
+            z = [row.Zahl1, row.Zahl2, row.Zahl3,
+                 row.Zahl4, row.Zahl5, row.Zahl6]
             s = cast(int, row.Super)
-            dt = datetime(cast(int,row.Jahr), cast(int,row.Monat), cast(int,row.Tag)).strftime("%d-%m-%Y")
+            dt = datetime(cast(int, row.Jahr), cast(int, row.Monat),
+                          cast(int, row.Tag)).strftime("%d-%m-%Y")
             for j in z:
                 j = cast(int, j)
                 if z_mask[j] == -1:
@@ -230,7 +238,8 @@ def heatmap_eurojackpot_not_drawn_since():
         for i, row in enumerate(df.iloc[::-1].itertuples(index=False)):
             z = [row.ZahlA1, row.ZahlA2, row.ZahlA3, row.ZahlA4, row.ZahlA5]
             e = [row.ZahlB1, row.ZahlB2]
-            dt = datetime(cast(int,row.Jahr), cast(int,row.Monat), cast(int,row.Tag)).strftime("%d-%m-%Y")
+            dt = datetime(cast(int, row.Jahr), cast(int, row.Monat),
+                          cast(int, row.Tag)).strftime("%d-%m-%Y")
             for j in z:
                 j = cast(int, j)
                 if z_mask[j] == -1:
@@ -271,7 +280,7 @@ def randomEurojackpot(mode: int = 1, qtipps: int = 1, count1: int = 5, count2: i
         pass
     else:
         return
-    
+
     euro = Eurojackpot(EJfile)
     setlist = []
     supernum = []
@@ -298,7 +307,7 @@ def randomEurojackpot(mode: int = 1, qtipps: int = 1, count1: int = 5, count2: i
         "supernum": supernum,
         "history": history
     }
-    
+
 
 @app.get("/random_6aus49")
 def random_6aus49(button: int = 6, mode: int = 1, threshold: int = 4):
@@ -350,3 +359,35 @@ def random_keno(typ: int = 10):
     #     media_type="application/octet-stream",
     #     headers={"Content-Disposition": "attachment; filename=lotto.arrow"}
     # )
+
+
+@app.get("/random_tn")
+def random_tn(mode: int = 1, threshold: int = 4):
+    num = []
+    history = []
+
+    match mode:
+        case 1:
+            gs = Glücksrad(Glücksradfile)
+            gs.choose()
+            num.append(gs.set)
+            history.append(gs.check_history(threshold))
+        case 2:
+            s77 = Spiel77(Spiel77file)
+            s77.choose()
+            num.append(s77)
+            history.append(s77.check_history(threshold))
+        case 3:
+            s6 = Super6(Super6file)
+            s6.choose()
+            num.append(s6.set)
+            history.append(s6.check_history(threshold))
+        case _:
+            pass
+
+    history = clean_history_tn(history)
+
+    return {
+        "setlist": num,
+        "history": history
+    }
