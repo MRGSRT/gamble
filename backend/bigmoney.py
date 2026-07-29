@@ -571,25 +571,31 @@ def add_matches_tn(matches, day, month, year, current_numbers, historical_num,
     return matches
 
 
-def check_num_tn(df, n, type="gs", threshold=5):
+def check_num_tn(df, n, mode="gs", threshold=5):
     try:
-        df = pd.read_csv(df, sep="\t", dtype=str).values
         n = "".join(map(str, n)) if isinstance(n, list) else n
         matches = []
-
-        match type:
+        match mode:
             case "gs":
                 print("Glücksrad")
+                df = (pd.read_csv(df, sep="\t", dtype=str).
+                      drop(["Tag", "Monat", "Jahr", "VA", "Spieleinsatz(EUR)"], axis=1).
+                      values)
                 for i in range(df.shape[0]):
-                    matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
-                                             n, df[i][3], threshold, full_suffix=True)
+                    for j in range(df.shape[1]):
+                        if type(df[i][j]) == float:
+                            continue
+                        matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
+                                                 n, df[i][3], threshold, full_suffix=True)
             case "s77":
                 print("Spiel77")
+                df = pd.read_csv(df, sep="\t", dtype=str).values
                 for i in range(df.shape[0]):
                     matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
                                              n, df[i][3], threshold)
             case "s6":
                 print("Super6")
+                df = pd.read_csv(df, sep="\t", dtype=str).values
                 for i in range(df.shape[0]):
                     matches = add_matches_tn(matches, df[i][0], df[i][1], df[i][2],
                                              n, df[i][3], threshold)
