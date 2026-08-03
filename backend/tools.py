@@ -144,7 +144,7 @@ def eurojackpot_arrow(setlist, supernum):
     return arrow_bytes
 
 
-def merge_rows_inplace(file):
+def merge_rows_inplace(file, sz=3):
     with open(file, 'r') as f:
         lines = f.readlines()
         filtered_lines = [line for line in lines if not 
@@ -154,7 +154,11 @@ def merge_rows_inplace(file):
                             line.strip().startswith('Vollsystem') or
                             line.strip().startswith('Teilsystem'))]
     with open(file, 'w') as f:
-        f.writelines(line.replace(' ', ',') for line in filtered_lines)
+        for line in filtered_lines:
+            if " " in line:
+                f.write(line.replace(" ", ",").rstrip("\n") + f",{sz}\n")
+            else:
+                f.write(line)
 
     with open(file, "r") as f:
         lines = [line.strip() for line in f if line.strip()]
@@ -177,10 +181,10 @@ def merge_rows_inplace(file):
             f.write(line + "\n")
 
 
-def format_CSVs(dir):
+def format_CSVs(dir, sz=3):
     files = glob.glob(f"{dir}/*",)
     for file in files:
-        merge_rows_inplace(file)
+        merge_rows_inplace(file, sz)
 
 
 def is_in(set, subset):
@@ -191,4 +195,4 @@ if __name__ == "__main__":
     load_dotenv()
     download_archives([os.getenv("LOTTO_49_URL"), os.getenv("EUROJACKPOT_URL"), os.getenv("KENO_URL"), os.getenv("GS_S77_S6_URL")])
     get_lotto(os.getenv("TSV_PATH"))
-    format_CSVs(os.getenv("CSV_PATH"))
+    format_CSVs(os.getenv("CSV_PATH"), 3)
