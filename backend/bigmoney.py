@@ -579,7 +579,7 @@ def check_num_tn(df, n, mode="gs", threshold=5):
             case "gs":
                 print("Glücksrad")
                 df = (pd.read_csv(df, sep="\t", dtype=str).
-                      drop(["Tag", "Monat", "Jahr", "VA", "Spieleinsatz(EUR)"], axis=1).
+                      drop(["VA", "Spieleinsatz(EUR)"], axis=1).
                       values)
                 for i in range(df.shape[0]):
                     for j in range(df.shape[1]):
